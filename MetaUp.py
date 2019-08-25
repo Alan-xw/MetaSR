@@ -43,21 +43,30 @@ def projection_metric(x, inH, inW, scale):
     scale_int = int(math.ceil(scale))
     # 大于scale的最小整数
 
-    # projection_pixel_coordinate
+    # projection_pixel_coordinate (H,W,1,1) coordinate(i,j)=[[i/r],[j/r]]
     h_p_coord = torch.arange(0, outH, 1).float().mul(1.0 / scale)
-    h_p_coord = torch.floor(h_p_coord).int().unsqueeze(1)
-    h_p_coord_metrix = h_p_coord.expand(outH, outW).unsqueeze(0).view(outH, outW, -1)
+    h_p_coord_ = torch.floor(h_p_coord).int().unsqueeze(1)
+    h_p_coord_metrix = h_p_coord_.expand(outH, outW).unsqueeze(0).view(outH, outW, -1)
 
     w_p_coord = torch.arange(0, outW, 1).float().mul(1.0 / scale)
-    w_p_coord = torch.floor(w_p_coord).int().unsqueeze(0)
-    w_p_coord_metrix = w_p_coord.expand(outH, outW).unsqueeze(0).view(outH, outW, -1)
+    w_p_coord_ = torch.floor(w_p_coord).int().unsqueeze(0)
+    w_p_coord_metrix = w_p_coord_.expand(outH, outW).unsqueeze(0).view(outH, outW, -1)
 
     projection_coord_metrix = torch.cat([h_p_coord_metrix, w_p_coord_metrix], dim=-1)
 
-    # offset_vector
+    # offset_vector (H*W,1,1,1) vector(i*j,:,:,:)=[i/r-[i/r],i/r-[i/r],1/r]
+    r_vector = torch.tensor(1/r,[outH,outW,1])
+    h_p_coord_offset = h_p_coord - h_p_coord.floor()
+    h_p_coord_offset = h_p_coord_offset.unsqueeze(1)
+    h_p_vector  = h_p_coord_offset.expand(outH, outW).unsqueeze(0).view(outH, outW, -1)
+    
+    w_p_coord_offset = w_p_coord - w_p_coord.floor()
+    w_p_coord_offset = w_p_coord_offset.unsqueeze(0)
+    w_p_vector  = w_p_coord_offset.expand(outH, outW).unsqueeze(0).view(outH, outW, -1)
+    offsect_vector = torch.cat([h_p_vector,w_p_vector,r_vector],dim=-1)
 
 
-    return projection_coord_metrix
+    return projection_coord_metrix, offsect_vector
 
 
 if __name__ == '__main__':
